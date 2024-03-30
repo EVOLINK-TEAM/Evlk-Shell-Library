@@ -1,106 +1,161 @@
 #ifndef _EVLK_SYSCLI_H_
 #define _EVLK_SYSCLI_H_
-#include "evlk_Shell.h"
+#include "evlk_cli.h"
+#include "evlk_shell.h"
 
-namespace _EVLK_STAND_SYSCLI
+namespace _EVLK_SHELL_
 {
-    using namespace _EVLK_SHELL_API;
-    static cli cli_sys_set(
-        "set",
-        [](cli::func_param param) -> cli::func_return
-        {
-            bool code;
-            std::vector<String> &params = param.params;
-            Shell &sh = param.sh;
-            if (params.size() == 2)
-            {
-                sh_Var_pool &vars = sh.getVarPool();
-                code = vars.set(params[0], params[1]);
-            }
-            return {code, ""};
-        },
-        {.display = false});
+    using namespace _EVLK_SHELL_;
+#include "ecli_begin.h"
 
-    static cli cli_sys_export(
-        "export",
-        [](cli::func_param param) -> cli::func_return
+    static cli cli__INPUT_STR_(
+        [](Shell &sh) -> int
         {
-            if (param.params.size() == 2)
-            {
-                std::vector<String>::iterator it = param.params.begin();
-                param.sh.exportVar((*it), (*it++));
-            }
-            return {.state = 1, .value = ""};
+            String user = getenv("USER"), dir = getenv("DIR"), input;
+            // cout << String("\33[36m[@") + user + ' ' + dir + "]>\033[0m";
+            // cout << "\33[36m>\33[0m";
+            cout << String('\n');
+            cout << ">";
+            cin >> input;
+            int S = system(input.c_str());
+            return S;
         },
-        {.display = false});
+        "_INPUT_STR_",
+        {.display = false, .script = true});
+
+    static cli cli_sys_set(
+        [](Shell &sh, int argc, char *argv[]) -> int
+        {
+            if (argc == 3)
+                return setenv((String(argv[1]) + '=' + String(argv[2])).c_str());
+            return 0;
+        },
+        "set",
+        {.display = false, .script = true});
 
     static cli cli_echo(
+        [](Shell &sh, int argc, char *argv[]) -> int
+        {
+            for (size_t i = 1; i < argc; i++)
+                cout << argv[i] << String(' ');
+            return 1;
+        },
         "echo",
-        [](cli::func_param param) -> cli::func_return
-        {
-            std::vector<String>::iterator it = param.params.begin();
-            String value;
-            while (it != param.params.end())
-            {
-                value += *it + ' ';
-                it++;
-            }
-            return {.state = 1, .value = value};
-        });
+        {.display = false, .script = true});
 
-    static cli cli_climng(
-        "climng",
-        [](cli::func_param param) -> cli::func_return
+    static cli cli_climan(
+        [](Shell &sh, int argc, char *argv[]) -> int
         {
-            std::vector<String> &params = param.params;
-            Shell &sh = param.sh;
-            if (!params.empty())
+            if (argc < 2)
+                return 0;
+            if (String(argv[1]) == "-Q")
             {
-                const String param1 = params.front();
-                const String param2 = params[1];
-                if (param1 == "-Q")
+                bool isunvis = false;
+                if (argc == 3)
                 {
-                    bool isunvis = false;
-                    if (param2 == "--unvisible")
-                    {
+                    if (String(argv[2]) == "--unvisible")
                         isunvis = true;
-                    }
-
-                    std::list<cli *> &Pool = sysh_cli_pool.getpool();
-                    std::list<cli *>::iterator it = Pool.begin();
-                    String val;
-                    while (it != Pool.end())
-                    {
-                        if (isunvis)
-                        {
-                            val += (**it).cliName + '\n';
-                        }
-                        else if ((**it).property.display)
-                        {
-                            val += (**it).cliName + '\n';
-                        }
-                        it++;
-                    }
-                    return {.state = 1, .value = val};
+                    else
+                        return 0;
                 }
+                else if (argc != 2)
+                    return 0;
+
+                for (auto i = sh.getClis()->begin(); i < sh.getClis()->end(); i++)
+                    if (isunvis)
+                        cout << (*i)->name << endl;
+                    else if ((*i)->property.display)
+                        cout << (*i)->name << endl;
+                return 1;
             }
-            return {.state = 0, .value = ""};
-        });
+            return 0;
+        },
+        "climan");
 
-    static void load(sh_Cli_pool &pool)
+    static cli cli_tput(
+        [](Shell &sh, int argc, char *argv[]) -> int
+        {
+            if (argc < 2)
+                return 0;
+            String option = argv[1];
+            size_t n = argc - 2;
+            int prarams[n] = {0};
+            for (int i = 0; i < n; i++)
+                prarams[i] = atoi(argv[i + 2]);
+            if (n == 0)
+            {
+                const char *listm[9] = {"sgr0", "bold", "dim", "smso", "", "blink", "", "rev", "invis"};
+                for (size_t i = 0; i < 9; i++)
+                {
+                    if (i == 4 && option == "smul" || option == "rmul")
+                    {
+                        cout << "\33[4m";
+                        return 1;
+                    }
+                    else if (i == 6)
+                        continue;
+                    else if (option == listm[i])
+                    {
+                        cout << String("\33[") + int(i) + "m";
+                        return 1;
+                    }
+                }
+                const char *listk[3] = {"el", "el1", "el2"};
+                for (size_t i = 0; i < 3; i++)
+                {
+                    if (option == listk[i])
+                    {
+                        cout << String("\33[") + int(i) + "K";
+                        return 1;
+                    }
+                }
+                if (option == "civis")
+                {
+                    cout << "\33[?25l";
+                    return 1;
+                }
+                if (option == "cvvis")
+                {
+                    cout << "\33[?25h";
+                    return 1;
+                }
+
+                return 0;
+            }
+
+            if (n == 1 && 0 <= prarams[0] && prarams[0] <= 9 && prarams[0] != 8)
+            {
+                if (option == "setaf")
+                    cout << String("\33[") + int(30 + prarams[0]) + 'm';
+                else if (option == "setab")
+                    cout << String("\33[") + int(40 + prarams[0]) + 'm';
+                else
+                    return 0;
+                return 1;
+            }
+            if (n == 2 && option == "cup")
+            {
+                cout << String("\33[") + prarams[0] + ';' + prarams[1] + 'H';
+                return 1;
+            }
+
+            return 0;
+        },
+        "tput");
+#include "ecli_end.h"
+
+    static void load(cli_pool &pool)
     {
-        pool.add(cli_sys_set);
-        pool.add(cli_sys_export);
-        pool.add(cli_echo);
-        pool.add(cli_climng);
+        pool.push_back(&cli__INPUT_STR_);
+        pool.push_back(&cli_sys_set);
+        pool.push_back(&cli_echo);
+        pool.push_back(&cli_climan);
+        pool.push_back(&cli_tput);
     };
-
-    static void load(sh_Var_pool &pool)
+    static void load(var_pool &pool)
     {
         pool.set("USER", "root");
         pool.set("DIR", "/");
-        pool.set("_INPUT_FORMAT_", "[@${USER} ${DIR}]> ");
-        pool.set("_INPUT_STRATEGY_", "echo ${_INPUT_FORMAT_}");
     };
 }
 
