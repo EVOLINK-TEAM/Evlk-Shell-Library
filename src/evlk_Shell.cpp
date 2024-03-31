@@ -248,7 +248,7 @@ namespace _EVLK_SHELL_
                         {
                             char offset[10] = "\033[";
                             itoa(str.length() - index, offset + 2, 10);
-                            strcat_s(offset, "D");
+                            strcat(offset, "D");
                             Io->write(offset);
                         }
                     }
