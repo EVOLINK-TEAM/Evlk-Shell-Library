@@ -2,7 +2,7 @@
 #define _EVLK_SHELL_H_
 
 #include "Stream.h"
-#include "evlk_dictman.h"
+#include "evlk_dictman/evlk_dictman.h"
 #include <vector>
 
 /******语法支持*********
