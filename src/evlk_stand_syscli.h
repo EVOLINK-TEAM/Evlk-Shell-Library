@@ -9,6 +9,7 @@ namespace _EVLK_SHELL_
 #include "ecli_begin.h"
 
     static cli cli__INPUT_STR_(
+        "_INPUT_STR_",
         [](Shell &sh) -> int
         {
             String user = getenv("USER"), dir = getenv("DIR"), input;
@@ -18,32 +19,30 @@ namespace _EVLK_SHELL_
             cout << ">";
             cin >> input;
             int S = system(input.c_str());
-            return S;
-        },
-        "_INPUT_STR_",
+            return S; },
         {.display = false, .script = true});
 
     static cli cli_sys_set(
+        "set",
         [](Shell &sh, int argc, char *argv[]) -> int
         {
             if (argc == 3)
                 return setenv((String(argv[1]) + '=' + String(argv[2])).c_str());
             return 0;
         },
-        "set",
         {.display = false, .script = true});
 
     static cli cli_echo(
+        "echo",
         [](Shell &sh, int argc, char *argv[]) -> int
         {
             for (size_t i = 1; i < argc; i++)
                 cout << argv[i] << String(' ');
-            return 1;
-        },
-        "echo",
+            return 1; },
         {.display = false, .script = true});
 
     static cli cli_climan(
+        "climan",
         [](Shell &sh, int argc, char *argv[]) -> int
         {
             if (argc < 2)
@@ -69,10 +68,10 @@ namespace _EVLK_SHELL_
                 return 1;
             }
             return 0;
-        },
-        "climan");
+        });
 
     static cli cli_tput(
+        "tput",
         [](Shell &sh, int argc, char *argv[]) -> int
         {
             if (argc < 2)
@@ -122,7 +121,6 @@ namespace _EVLK_SHELL_
 
                 return 0;
             }
-
             if (n == 1 && 0 <= prarams[0] && prarams[0] <= 9 && prarams[0] != 8)
             {
                 if (option == "setaf")
@@ -140,8 +138,7 @@ namespace _EVLK_SHELL_
             }
 
             return 0;
-        },
-        "tput");
+        });
 #include "ecli_end.h"
 
     static void load(cli_pool &pool)
