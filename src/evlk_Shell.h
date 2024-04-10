@@ -1,10 +1,9 @@
 #ifndef _EVLK_SHELL_H_
 #define _EVLK_SHELL_H_
 
-#include "evlk_cli.h"
 #include "Stream.h"
-#include "list"
-#include "map"
+#include "evlk_dictman/evlk_dictman.h"
+#include <vector>
 
 /******语法支持*********
  *
@@ -16,79 +15,82 @@
  * && & || 逻辑与、逻辑或//TODO
  *
  * *******************/
+using std ::vector;
 
-namespace _EVLK_SHELL_API
+namespace _EVLK_SHELL_
 {
-    struct sh_Cli_pool
+    struct cli;
+    typedef vector<cli *> cli_pool;
+    typedef _EVLK_DICTMAN_::dictman var_pool;
+    extern cli_pool sysh_cli_pool;
+    extern var_pool sysh_var_pool;
+
+    class Shell
     {
     private:
-        std::list<cli *> pool;
-
-    public:
-        std::list<cli *> &getpool();
-        bool add(cli &cli);
-        int length();
-        bool remove();
-    };
-
-    struct sh_Var_pool
-    {
-    private:
-        std::map<String, String> pool;
-
-    public:
-        sh_Var_pool();
-        sh_Var_pool(std::map<String, String>);
-        std::map<String, String> &getpool();
-        bool set(String key, String value);
-        bool get(String key, String &value) const;
-        bool erase(String key);
-    };
-
-    extern sh_Cli_pool sysh_cli_pool;
-    extern sh_Var_pool sysh_var_pool;
-
-    class shPoolMng
-    {
-    protected:
-        sh_Cli_pool *clipool; // 方法池
-        sh_Var_pool varpool;  // 变量池
-
-    public:
-        shPoolMng(sh_Cli_pool &clipool, sh_Var_pool &varpool);
-        sh_Cli_pool &getCliPool();
-        sh_Var_pool &getVarPool();
-        bool getVar(String key, String &value) const;
-        bool exportVar(String key, String value);
-        bool unsetVar(String kill_dependency);
-    };
-
-    class Shell : public shPoolMng
-    {
-    private:
-        Stream *Io; // 输入输出(Terminal)
-        int state;  // TODO
-        // -1 未启动
+        cli_pool clis; // 函数池
+        var_pool vars; // 变量池
+        Stream *Io;    // 输入输出(Terminal)
+        bool echo = true;
+        String cout_catch;
+        // String cin_catch;
+        String env_temp; // 给getenv()存放返回值
+        int state;       // TODO
         // 0 待机
         // 1 运行占用
-        // 等待用户输入
+
+        const cli *_foundCli(String name);
+        // 输入格式(是否处理控制字符)
+        bool cin_format = true;
+        String _tty() const;
+        int _cout(const String &);
+        int _cin(String &) const;
+
+        class outModule
+        {
+        private:
+            Shell &sh;
+
+        public:
+            outModule(Shell &sh) : sh(sh){};
+            outModule &operator<<(String str)
+            {
+                sh._cout(str);
+                return *this;
+            };
+        };
+        class inModule
+        {
+        private:
+            const Shell &sh;
+
+        public:
+            inModule(Shell &sh) : sh(sh){};
+            int operator>>(String &str) { return sh._cin(str); };
+        };
 
     public:
-        String path;
-        Shell(Stream &io, sh_Cli_pool &clipool = sysh_cli_pool, sh_Var_pool &varpool = sysh_var_pool);
+        Shell(Stream &io, cli_pool &clipool = sysh_cli_pool, var_pool &varpool = sysh_var_pool);
+        void begin(cli_pool &clipool = sysh_cli_pool, var_pool &varpool = sysh_var_pool);
+        Shell &operator<<(cli &); // 函数注册
 
-        cli::func_return push_one(const char *cmd); // 以空格为分隔符运行命令
-        cli::func_return push(const char *cmd);     // 解释器
+        int system(const char *cmd, bool echo = true); // 以空格为分隔符运行命令
+        int push(const char *cmd, bool echo = true);   // shell脚本解释机
+        int run() { return system("_INPUT_STR_"); };   // 执行外部输入策略
 
-        int run(const char *cmd);
-        int run();
+        //! cli used
+        const String &getCatch() const { return cout_catch; };
+        const cli_pool *getClis() const { return &clis; };
+        const var_pool *getVars() const { return &vars; };
+        int getState() const { return state; };
+        char *getenv_s(size_t *_ReturnSize, char *_DstBuf, size_t _DstSize, const char *_VarName);
+        const char *getenv(const char *envvar);
+        int setenv(const char *name, const char *value, int overwrite);
+        int setenv(const char *string);
+        int putenv(const char *string);
 
-        // 以下是cli程序使用的命令
-        int getState() const;
-        int print(const char *) const;
-        int println(const char *) const;
-        String getCommand() const;
-        /////////////////////
+        outModule cout;
+        inModule cin;
     };
 }
 
