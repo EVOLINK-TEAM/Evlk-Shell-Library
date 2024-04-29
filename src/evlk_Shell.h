@@ -2,7 +2,7 @@
 #define _EVLK_SHELL_H_
 
 #include "Stream.h"
-#include "evlk_dictman.h"
+#include "evlk_dictman/evlk_dictman.h"
 #include <vector>
 
 /******语法支持*********
@@ -58,7 +58,6 @@ namespace _EVLK_SHELL_
                 sh._cout(str);
                 return *this;
             };
-            void flush() { return sh.Io->flush(); }
         };
         class inModule
         {
@@ -72,6 +71,7 @@ namespace _EVLK_SHELL_
 
     public:
         Shell(Stream &io, cli_pool &clipool = sysh_cli_pool, var_pool &varpool = sysh_var_pool);
+        void begin(cli_pool &clipool = sysh_cli_pool, var_pool &varpool = sysh_var_pool);
         Shell &operator<<(cli &); // 函数注册
 
         int system(const char *cmd, bool echo = true); // 以空格为分隔符运行命令
