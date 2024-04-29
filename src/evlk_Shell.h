@@ -58,6 +58,7 @@ namespace _EVLK_SHELL_
                 sh._cout(str);
                 return *this;
             };
+            void flush() { return sh.Io->flush(); }
         };
         class inModule
         {
