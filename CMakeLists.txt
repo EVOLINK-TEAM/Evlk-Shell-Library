@@ -9,8 +9,8 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/ srcs)
 set(include_dirs ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 set(requires arduino)
 
-set(srcs ${srcs} ${CMAKE_CURRENT_SOURCE_DIR}/src/evlk_dictman/evlk_dictman.cpp)
-set(include_dirs ${include_dirs} ${CMAKE_CURRENT_SOURCE_DIR}/src/evlk_dictman/)
+set(srcs ${srcs} ${CMAKE_CURRENT_SOURCE_DIR}/src/evlk_dictman/evlk_dictman.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/evlk_stand_syscli/evlk_stand_syscli.cpp)
+set(include_dirs ${include_dirs} ${CMAKE_CURRENT_SOURCE_DIR}/src/evlk_dictman/ ${CMAKE_CURRENT_SOURCE_DIR}/src/evlk_stand_syscli)
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include_dirs}
