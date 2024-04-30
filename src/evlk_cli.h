@@ -61,13 +61,13 @@ namespace _EVLK_SHELL_
         }
         cli(const cli &c)
             : name(c.name), func(c.func), func_c(c.func_c), func_cv(c.func_cv), func_cve(c.func_cve) {}
-        cli(cli_func_s func, String name, Property property = {.display = true})
+        cli(String name, cli_func_s func, Property property = {.display = true})
             : func(func), func_c(nullptr), func_cv(nullptr), func_cve(nullptr), name(name), property(property){};
-        cli(cli_func_c func, String name, Property property = {.display = true})
+        cli(String name, cli_func_c func, Property property = {.display = true})
             : func(nullptr), func_c(func), func_cv(nullptr), func_cve(nullptr), name(name), property(property){};
-        cli(cli_func_cv func, String name, Property property = {.display = true})
+        cli(String name, cli_func_cv func, Property property = {.display = true})
             : func(nullptr), func_c(nullptr), func_cv(func), func_cve(nullptr), name(name), property(property){};
-        cli(cli_func_cve func, String name, Property property = {.display = true})
+        cli(String name, cli_func_cve func, Property property = {.display = true})
             : func(nullptr), func_c(nullptr), func_cv(nullptr), func_cve(func), name(name), property(property){};
     };
 }
