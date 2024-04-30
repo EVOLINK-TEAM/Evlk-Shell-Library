@@ -1,82 +1,82 @@
+#include "evlk_cli.h"
 #include "evlk_Shell.h"
 #include "evlk_stand_syscli.h"
 #include "HardwareSerial.h"
-using namespace _EVLK_SHELL_API;
-using namespace _EVLK_STAND_SYSCLI;
+using namespace _EVLK_SHELL_;
+#define cout sh.cout
+#define endl String('\n')
+#define cin sh.cin
 
 /**
- * @param cli::func_param
- * struct
- *  - std::vector<String> &params;  //sh对象传递过来的参数
- *  - Shell &sh;                    //用于调用sh对象的控制函数
- *
- * @return cli::func_return
- * struct
- * - int state = 0;                 //状态码返回值
- * - String value = "";             //字符串型返回值
+ * @param sh   shell对象接口
+ * @param argc 传入参数个数
+ * @param argv 传入参数数组
+ * @param envp 环境参数数组,以NULL为结尾
+ * @return 返回状态码 0-正常结束,-1-非正常结束
+ * @note 其他重载方式：
+ * @note int (Shell &sh);
+ * @note int (Shell &sh, int argc);
+ * @note int (Shell &sh, int argc, char *argv[]);
+ * @note int (Shell &sh, int argc, char *argv[], char *envp[]);
  * **/
-cli::func_return custom_sum_function(cli::func_param param)
+int custom_sum_function(Shell &sh, int argc, char *argv[], char *envp[])
 {
-    std::vector<String>::iterator it = param.params.begin();
-    if (param.params.size() != 2)
+    if (argc != 3)
     {
-        return {
-            .state = 0,
-            .value = " 参数仅能为两个整数 "};
+        cout << "参数无效，请传入两个参数" << endl;
+        return -1;
     }
     else
     {
-        param.sh.println("自定义cli正在运行");
-        int num1 = atoi((*it).c_str());
-        it++;
-        int num2 = atoi((*it).c_str());
-        char buffer[10];
-        return {
-            .state = 1,
-            .value = itoa(num1 + num2, buffer, 10)};
+        // argv[0]是命令名
+        int num1 = atoi(argv[1]);
+        int num2 = atoi(argv[2]);
+        if ((!num1 && (String)argv[0] != "0") || (!num2 && (String)argv[1] != "0"))
+        {
+            cout << "参数无效" << endl;
+            return -1;
+        }
+
+        cout << (String)num1 + "+" + num2 + "=" + (num1 + num2) << endl;
+        return 0;
     }
 }
 
 /**
- * @param String name
- * @param function
+ * @param Name
+ * @param Function
  * @param Property
- * struct
- *  - bool display = true;   //cli的显隐性
  * **/
-static cli custom_sum("custom_sum", custom_sum_function, {});
+static cli custom_sum("csum", custom_sum_function);
+
+// Shell sh(Serial, sysh_cli_pool, sysh_var_pool);
+Shell sh(Serial);
 
 void setup()
 {
     Serial.begin(115200);
 
-    //_EVLK_STAND_SYSCLI::load中定义了一些初始关键字shell变量和cli
-    _EVLK_STAND_SYSCLI::load(sysh_cli_pool);
-    _EVLK_STAND_SYSCLI::load(sysh_var_pool);
+    // evlk_stand_syscli.h中定义了一些初始默认关键字shell变量和cli
+    _EVLK_SHELL_::load(sysh_cli_pool);
+    _EVLK_SHELL_::load(sysh_var_pool);
+    // sh.begin(sysh_cli_pool, sysh_var_pool);
+    sh.begin();
 
-    // 向默认cli池中加入自定义的cli
-    sysh_cli_pool.add(custom_sum);
-
-    // Shell sh(Serial, sysh_cli_pool);
-    Shell sh(Serial);
+    // 添加自定义的cli
+    sh << custom_sum;
 
     /** shell通过run或push函数执行命令
-     ** shell::run和shell::push的主要区别在于
-     ** shell::run = shell::push("${_INPUT_STRATEGY_}") + shell::push(cmd)
-     ** _INPUT_STRATEGY_是关键字变量，它总是会在run函数前先被运行
-     ** shell::run的返回值只有int，shell::push的返回值为cli::func_return
-     ** shell::run会打印shell::push(cmd)的返回值，而shell::push只有返回值而不会打印结果
+     ** shell::run和shell::system的主要区别在于
+     ** shell::run = system("_INPUT_STR_")
+     ** _INPUT_STR_是自定义的输入框监听程序
      **/
-    String cmd = "custom_sum 111 222";
+    String cmd = "csum 111 222";
     Serial.println("---------------------------------");
-    String v = sh.push(cmd.c_str()).value;
-    Serial.println(v);
-    Serial.println("---------------------------------");
-    sh.run(cmd.c_str());
-    Serial.println("---------------------------------");
-    sh.run(); // 可以通过流输入命令
+    sh.system(cmd.c_str());
+    Serial.print("---------------------------------");
 }
 
 void loop()
 {
+    sh.run(); // 可以通过流输入命令
 }
