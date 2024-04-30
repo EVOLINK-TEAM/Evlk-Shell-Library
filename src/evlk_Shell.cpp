@@ -287,7 +287,7 @@ namespace _EVLK_SHELL_
             cmds.push_back(String(ret, end - ret));
 
         if (!cmds.size())
-            return 0;
+            return 127;
 
         auto it = cmds.begin();
         while (it != cmds.end())
@@ -304,12 +304,7 @@ namespace _EVLK_SHELL_
                 break;
             }
         if (!exe)
-        {
-            // Io->print(String("\033[33mERROR: not found the command named \"") + cmds[0] + "\"\033[0m");
-            Io->print(String("ERROR: not found the command named \"") + cmds[0] + "\"");
-            Io->flush();
-            return 0;
-        }
+            return 127;
 
         vector<String> envs;
         char **envp = NULL;
@@ -323,7 +318,7 @@ namespace _EVLK_SHELL_
             {
                 envs.push_back("");
                 if (!vars.get(i, *(envs.end() - 1)))
-                    return 0;
+                    return 1;
             }
             envp = new char *[envs.size() + 1];
             envp[envs.size()] = NULL;
@@ -353,7 +348,7 @@ namespace _EVLK_SHELL_
         }
 
         default:
-            return 0;
+            return 127;
         }
     }
     int Shell::push(const char *cmd, bool echo)
